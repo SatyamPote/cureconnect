@@ -1,0 +1,7 @@
+{
+  "name": "CureConnect",
+  "description": "Real-time, location-aware medicine finder connecting patients to nearby pharmacies with live stock information.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
