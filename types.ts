@@ -18,12 +18,14 @@ export interface Medicine {
   price: number;
   requiresPrescription: boolean;
   image?: string;
+  isCritical?: boolean;
 }
 
 export interface PharmacyInventory {
   medicineId: string;
   quantity: number;
   lastUpdated: string; // ISO string
+  expiryDate?: string; // ISO string
 }
 
 export interface Pharmacy {
@@ -40,17 +42,14 @@ export interface Pharmacy {
 export interface CartItem extends Medicine {
   quantity: number;
   pharmacyId: string;
+  distance: number; // in km
 }
 
 export interface User {
   id: string;
   name: string;
   email: string;
-}
-
-export interface SearchResult {
-  pharmacy: Pharmacy;
-  medicine: Medicine;
-  stock: PharmacyInventory;
-  distance: number; // in km
+  points: number;
+  role: 'user' | 'partner';
+  hasSeenTour?: boolean;
 }

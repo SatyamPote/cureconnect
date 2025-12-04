@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Trash2, ArrowRight, CheckCircle } from 'lucide-react';
+import { Trash2, ArrowRight, CheckCircle, Clock } from 'lucide-react';
 import { PHARMACIES } from '../constants';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,7 +9,9 @@ export const CartPage = () => {
   const navigate = useNavigate();
 
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const [checkedOut, setCheckedOut] = React.useState(false);
+  const [checkedOut, setCheckedOut] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [pickupTime, setPickupTime] = useState('18:00');
 
   // Group items by pharmacy
   const groupedItems = cart.reduce((acc, item) => {
@@ -27,6 +29,7 @@ export const CartPage = () => {
     setTimeout(() => {
       clearCart();
       setCheckedOut(false);
+      setShowSchedule(false);
       alert("Order reserved successfully! Please pick up from the pharmacy within 24 hours.");
     }, 2000);
   };
@@ -52,6 +55,7 @@ export const CartPage = () => {
         <h2 className="text-2xl font-bold text-slate-800">Reservation Confirmed!</h2>
         <p className="text-slate-600 mt-2 max-w-md">
           Your medicines have been reserved. We've sent the details to your phone.
+          {showSchedule && <span className="block font-semibold mt-1">Pickup scheduled for {pickupTime}</span>}
         </p>
       </div>
     );
@@ -79,7 +83,7 @@ export const CartPage = () => {
                     </div>
                     <div className="text-right flex items-center gap-4">
                       <span className="font-bold text-slate-800">₹{item.price * item.quantity}</span>
-                      <button 
+                      <button
                         onClick={() => removeFromCart(item.id, item.pharmacyId)}
                         className="text-slate-400 hover:text-red-500 transition-colors"
                       >
@@ -95,17 +99,42 @@ export const CartPage = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-500">Total Estimate</p>
-            <p className="text-2xl font-bold text-slate-900">₹{total}</p>
+        <div className="max-w-4xl mx-auto">
+
+          {/* Schedule Pickup Toggle */}
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="checkbox"
+              id="schedule"
+              checked={showSchedule}
+              onChange={(e) => setShowSchedule(e.target.checked)}
+              className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+            />
+            <label htmlFor="schedule" className="text-sm font-medium text-slate-700 flex items-center gap-1">
+              <Clock size={16} /> Schedule Pickup
+            </label>
+            {showSchedule && (
+              <input
+                type="time"
+                value={pickupTime}
+                onChange={(e) => setPickupTime(e.target.value)}
+                className="ml-2 border border-slate-300 rounded px-2 py-1 text-sm"
+              />
+            )}
           </div>
-          <button 
-            onClick={handleCheckout}
-            className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-teal-600/20 transition-all transform active:scale-95"
-          >
-            {user ? 'Confirm Reservation' : 'Login to Reserve'}
-          </button>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-500">Total Estimate</p>
+              <p className="text-2xl font-bold text-slate-900">₹{total}</p>
+            </div>
+            <button
+              onClick={handleCheckout}
+              className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-teal-600/20 transition-all transform active:scale-95"
+            >
+              {user ? (showSchedule ? 'Confirm & Schedule' : 'Confirm Reservation') : 'Login to Reserve'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

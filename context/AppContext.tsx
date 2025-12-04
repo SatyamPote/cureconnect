@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Coordinate, CartItem, User } from '../types';
 import { auth, db, onAuthStateChanged, signOut as firebaseSignOut } from '../services/firebase';
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, getDoc, updateDoc, increment } from 'firebase/firestore';
 
 interface AppContextType {
   userLocation: Coordinate | null;
@@ -14,6 +14,7 @@ interface AppContextType {
   logout: () => void;
   isLoadingLocation: boolean;
   isLoadingAuth: boolean;
+  addPoints: (amount: number) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -40,7 +41,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         (error) => {
           console.error("Geolocation error:", error);
           // Fallback to Bangalore Center for demo purposes
-          setUserLocation({ latitude: 12.9716, longitude: 77.5946 }); 
+          setUserLocation({ latitude: 12.9716, longitude: 77.5946 });
           setLocationError("Could not detect location. Using default.");
           setIsLoadingLocation(false);
         }
@@ -53,47 +54,70 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Auth Listener & Cart Sync
   useEffect(() => {
+    let unsubscribeSnapshot: (() => void) | undefined;
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Transform Firebase user to our internal User type
-        const appUser: User = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-          email: firebaseUser.email || '',
-        };
-        setUser(appUser);
-        
-        // Setup Firestore listener for this user's cart
+        // Setup Firestore listener for this user's data (cart + points)
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+
+        unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
+
+            // Update User State
+            const appUser: User = {
+              id: firebaseUser.uid,
+              name: data.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+              email: firebaseUser.email || '',
+              points: data.points || 0,
+              role: data.role || 'user',
+              hasSeenTour: data.hasSeenTour || false
+            };
+            setUser(appUser);
+
             if (data.cart) {
               setCart(data.cart);
             }
           } else {
             // Create the document if it doesn't exist (e.g., first login)
-            setDoc(userDocRef, { name: appUser.name, email: appUser.email, cart: [] }, { merge: true });
+            const newUser: User = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+              email: firebaseUser.email || '',
+              points: 0,
+              role: 'user',
+              hasSeenTour: false
+            };
+            setDoc(userDocRef, { ...newUser, cart: [] }, { merge: true });
+            setUser(newUser);
           }
         });
 
         setIsLoadingAuth(false);
-        return () => unsubscribeSnapshot();
       } else {
         setUser(null);
         setCart([]); // Clear cart on logout
         setIsLoadingAuth(false);
+        if (unsubscribeSnapshot) {
+          unsubscribeSnapshot();
+        }
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+    };
   }, []);
 
   const addToCart = async (item: CartItem) => {
     // Optimistic calculation for new state
     let newCart = [...cart];
     const existingIndex = newCart.findIndex(i => i.id === item.id && i.pharmacyId === item.pharmacyId);
-    
+
     if (existingIndex >= 0) {
       const existingItem = newCart[existingIndex];
       newCart[existingIndex] = { ...existingItem, quantity: existingItem.quantity + item.quantity };
@@ -116,7 +140,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const removeFromCart = async (medicineId: string, pharmacyId: string) => {
     const newCart = cart.filter(i => !(i.id === medicineId && i.pharmacyId === pharmacyId));
-    
+
     if (user) {
       try {
         await setDoc(doc(db, 'users', user.id), { cart: newCart }, { merge: true });
@@ -140,6 +164,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addPoints = async (amount: number) => {
+    if (user) {
+      try {
+        const userDocRef = doc(db, 'users', user.id);
+        await updateDoc(userDocRef, {
+          points: increment(amount)
+        });
+      } catch (e) {
+        console.error("Error adding points", e);
+      }
+    }
+  };
+
   const logout = async () => {
     try {
       await firebaseSignOut(auth);
@@ -149,17 +186,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ 
-      userLocation, 
-      locationError, 
-      cart, 
-      addToCart, 
-      removeFromCart, 
+    <AppContext.Provider value={{
+      userLocation,
+      locationError,
+      cart,
+      addToCart,
+      removeFromCart,
       clearCart,
-      user, 
+      user,
       logout,
       isLoadingLocation,
-      isLoadingAuth
+      isLoadingAuth,
+      addPoints
     }}>
       {children}
     </AppContext.Provider>

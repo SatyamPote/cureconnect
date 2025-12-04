@@ -1,13 +1,15 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { 
-  getAuth, 
+import {
+  getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   updateProfile
 } from "firebase/auth";
+
+console.log("firebase.ts: Imports successful");
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHEC0p89XtARfEJGcMTNXTtnVOjnWkJvQ",
@@ -19,15 +21,31 @@ const firebaseConfig = {
   measurementId: "G-BCH97TB5K7"
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+let app;
+let db;
+let auth;
+
+try {
+  console.log("firebase.ts: Initializing app...");
+  app = initializeApp(firebaseConfig);
+  console.log("firebase.ts: App initialized", app);
+
+  db = getFirestore(app);
+  console.log("firebase.ts: Firestore initialized", db);
+
+  auth = getAuth(app);
+  console.log("firebase.ts: Auth initialized", auth);
+} catch (error) {
+  console.error("firebase.ts: Error initializing Firebase:", error);
+}
+
+export { db, auth };
 
 // Export Auth functions directly from the SDK
-export { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged, 
-  updateProfile 
+export {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
 };

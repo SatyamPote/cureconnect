@@ -2,8 +2,7 @@ import React from 'react';
 import { SearchResult } from '../types';
 import { getStockStatus } from '../services/mockDatabase';
 import { StockStatus } from '../types';
-import { MapPin, Phone, ShoppingBag, AlertCircle, FileText } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { MapPin, Phone, ShoppingBag, AlertCircle, FileText, Flag } from 'lucide-react';
 
 interface Props {
   data: SearchResult;
@@ -23,8 +22,13 @@ export const PharmacyCard: React.FC<Props> = ({ data, onAddToCart, onFindAlterna
     }
   };
 
+  const handleReportIssue = () => {
+    // In a real app, this would send a report to the backend
+    alert(`Report submitted: Stock info for ${medicine.name} at ${pharmacy.name} is incorrect. We will verify this.`);
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 hover:shadow-md transition-shadow relative group">
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="font-bold text-lg text-slate-900">{pharmacy.name}</h3>
@@ -50,6 +54,12 @@ export const PharmacyCard: React.FC<Props> = ({ data, onAddToCart, onFindAlterna
               <span>Rx Required</span>
             </div>
           )}
+          {medicine.isCritical && (
+            <div className="inline-flex items-center gap-1 mt-1.5 ml-2 px-2 py-0.5 rounded bg-red-100 text-red-800 text-[10px] font-medium border border-red-200 animate-pulse">
+              <AlertCircle size={10} />
+              <span>Critical</span>
+            </div>
+          )}
         </div>
         <div className="text-right">
           <p className="font-bold text-slate-900">₹{medicine.price}</p>
@@ -59,14 +69,14 @@ export const PharmacyCard: React.FC<Props> = ({ data, onAddToCart, onFindAlterna
 
       <div className="mt-4 flex gap-3">
         {status !== StockStatus.OUT_OF_STOCK ? (
-          <button 
+          <button
             onClick={onAddToCart}
             className="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors"
           >
             <ShoppingBag size={16} /> Add to Cart
           </button>
         ) : (
-           <button 
+          <button
             onClick={onFindAlternative}
             className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors"
           >
@@ -77,10 +87,26 @@ export const PharmacyCard: React.FC<Props> = ({ data, onAddToCart, onFindAlterna
           <Phone size={20} />
         </a>
       </div>
-      
-      <p className="text-[10px] text-slate-400 mt-2 text-right">
-        Updated: {new Date(stock.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-      </p>
+
+      <div className="flex justify-end items-center gap-2 mt-2">
+        {stock.expiryDate && new Date(stock.expiryDate) < new Date(Date.now() + 7776000000) && ( // 3 months
+          <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 flex items-center gap-1">
+            <AlertCircle size={10} /> Expiring Soon: {new Date(stock.expiryDate).toLocaleDateString()}
+          </span>
+        )}
+        <p className="text-[10px] text-slate-400 text-right">
+          Updated: {new Date(stock.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      </div>
+
+      {/* Crowd Source Report Button (Visible on Hover) */}
+      <button
+        onClick={handleReportIssue}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-300 hover:text-red-500"
+        title="Report Incorrect Info"
+      >
+        <Flag size={14} />
+      </button>
     </div>
   );
 };

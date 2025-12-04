@@ -9,12 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.31.0",
+    "driver.js": "^1.4.0",
+    "firebase": "^12.6.0",
+    "lucide-react": "^0.555.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "lucide-react": "^0.555.0",
-    "@google/genai": "^1.31.0",
-    "react-router-dom": "^7.10.1",
-    "firebase": "^12.6.0"
+    "react-router-dom": "^7.10.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
