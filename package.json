@@ -9,14 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "driver.js": "^1.4.0",
-    "firebase": "^12.6.0",
-    "lucide-react": "^0.555.0",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
-    "react-router-dom": "^7.10.1"
-  },
+  "@google/genai": "^1.31.0",
+  "firebase": "^12.6.0",
+  "lucide-react": "^0.555.0",
+  "react": "^19.2.1",
+  "react-dom": "^19.2.1",
+  "react-router-dom": "^7.10.1",
+  "driver.js": "^1.4.0"
+}
+,
   "devDependencies": {
     "vite": "^6.4.1",
     "tailwindcss": "^3.4.0",
